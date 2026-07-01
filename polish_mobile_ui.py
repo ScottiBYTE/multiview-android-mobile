@@ -1,4 +1,21 @@
-<?xml version="1.0" encoding="utf-8"?>
+from pathlib import Path
+
+layout = Path("app/src/main/res/layout/activity_main.xml")
+colors = Path("app/src/main/res/values/colors.xml")
+main = Path("app/src/main/java/com/scottibyte/multiview/mobile/MainActivity.kt")
+
+colors.write_text('''<resources>
+    <color name="bg">#0f172a</color>
+    <color name="panel">#172235</color>
+    <color name="panel_soft">#111c2e</color>
+    <color name="text_main">#f8fafc</color>
+    <color name="text_muted">#cbd5e1</color>
+    <color name="text_dim">#94a3b8</color>
+    <color name="accent">#38bdf8</color>
+</resources>
+''')
+
+layout.write_text('''<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -53,17 +70,13 @@
             android:background="@color/panel"
             android:padding="18dp">
 
-            <Button
-                android:id="@+id/connectionToggleButton"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Connection Settings" />
-
-            <LinearLayout
-                android:id="@+id/connectionDetails"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:text="Connection"
+                android:textColor="@color/text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -124,8 +137,6 @@
                 android:text=""
                 android:textColor="@color/text_muted"
                 android:textSize="15sp" />
-
-            </LinearLayout>
         </LinearLayout>
 
         <TextView
@@ -147,3 +158,49 @@
 
     </LinearLayout>
 </ScrollView>
+''')
+
+k = main.read_text()
+
+if "private lateinit var connectionSummaryText" not in k:
+    k = k.replace(
+        "    private lateinit var statusText: TextView",
+        "    private lateinit var statusText: TextView\n    private lateinit var connectionSummaryText: TextView\n    private lateinit var cameraHeaderText: TextView"
+    )
+
+k = k.replace(
+    "        statusText = findViewById(R.id.statusText)",
+    "        statusText = findViewById(R.id.statusText)\n        connectionSummaryText = findViewById(R.id.connectionSummaryText)\n        cameraHeaderText = findViewById(R.id.cameraHeaderText)"
+)
+
+k = k.replace(
+    '''        val token = prefs().getString("token", null)
+        if (!token.isNullOrBlank()) {
+            statusText.text = "Stored pairing token found."
+        }''',
+    '''        val token = prefs().getString("token", null)
+        if (!token.isNullOrBlank()) {
+            connectionSummaryText.text = "Connected to: ${savedServer.removePrefix("https://").removePrefix("http://")}"
+            statusText.text = "Stored pairing token found. Load cameras when ready."
+        } else {
+            connectionSummaryText.text = "Not paired"
+        }'''
+)
+
+k = k.replace(
+    '''                            statusText.text = "Paired successfully. Loading cameras..."''',
+    '''                            connectionSummaryText.text = "Connected to: ${serverUrl.removePrefix("https://").removePrefix("http://")}"
+                            statusText.text = "Paired successfully. Loading cameras..."'''
+)
+
+k = k.replace(
+    '''                    renderCameraList(cameras)
+                    statusText.text = "Loaded ${cameras.size} cameras."''',
+    '''                    renderCameraList(cameras)
+                    cameraHeaderText.text = "Cameras (${cameras.size})"
+                    statusText.text = "Loaded ${cameras.size} cameras."'''
+)
+
+main.write_text(k)
+
+print("Polished mobile UI layout and status/header text.")

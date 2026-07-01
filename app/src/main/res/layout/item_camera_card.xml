@@ -33,7 +33,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="Thumbnail"
+                android:text="No thumbnail yet"
                 android:textColor="#64748b"
                 android:textSize="18sp"
                 android:textStyle="bold" />

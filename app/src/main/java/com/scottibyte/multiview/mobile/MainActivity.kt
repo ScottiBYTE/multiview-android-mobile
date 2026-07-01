@@ -28,6 +28,10 @@ class MainActivity : Activity() {
 
     private lateinit var serverUrlEdit: EditText
     private lateinit var statusText: TextView
+    private lateinit var connectionSummaryText: TextView
+    private lateinit var cameraHeaderText: TextView
+    private lateinit var connectionDetails: View
+    private lateinit var connectionToggleButton: Button
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
@@ -50,6 +54,10 @@ class MainActivity : Activity() {
 
         serverUrlEdit = findViewById(R.id.serverUrlEdit)
         statusText = findViewById(R.id.statusText)
+        connectionSummaryText = findViewById(R.id.connectionSummaryText)
+        cameraHeaderText = findViewById(R.id.cameraHeaderText)
+        connectionDetails = findViewById(R.id.connectionDetails)
+        connectionToggleButton = findViewById(R.id.connectionToggleButton)
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
@@ -73,13 +81,27 @@ class MainActivity : Activity() {
             requestPairing()
         }
 
+        connectionToggleButton.setOnClickListener {
+            connectionDetails.visibility = if (connectionDetails.visibility == View.VISIBLE) {
+                View.GONE
+            } else {
+                View.VISIBLE
+            }
+        }
+
         findViewById<Button>(R.id.loadCamerasButton).setOnClickListener {
             fetchConfig()
         }
 
         val token = prefs().getString("token", null)
         if (!token.isNullOrBlank()) {
-            statusText.text = "Stored pairing token found."
+            connectionSummaryText.text = "Connected to: ${savedServer.removePrefix("https://").removePrefix("http://")}"
+            connectionDetails.visibility = View.GONE
+            statusText.text = "Stored pairing token found. Loading cameras..."
+            fetchConfig()
+        } else {
+            connectionSummaryText.text = "Not paired"
+            connectionDetails.visibility = View.VISIBLE
         }
     }
 
@@ -156,6 +178,8 @@ class MainActivity : Activity() {
                         runOnUiThread {
                             pairingCodeText.text = ""
                             pairingHelpText.text = ""
+                            connectionSummaryText.text = "Connected to: ${serverUrl.removePrefix("https://").removePrefix("http://")}"
+                            connectionDetails.visibility = View.GONE
                             statusText.text = "Paired successfully. Loading cameras..."
                             Toast.makeText(this, "Paired successfully", Toast.LENGTH_SHORT).show()
                             fetchConfig()
@@ -195,6 +219,7 @@ class MainActivity : Activity() {
 
                 runOnUiThread {
                     renderCameraList(cameras)
+                    cameraHeaderText.text = "Cameras (${cameras.size})"
                     statusText.text = "Loaded ${cameras.size} cameras."
                 }
             } catch (e: Exception) {
@@ -278,7 +303,7 @@ class MainActivity : Activity() {
             }
 
             holder.itemView.setOnClickListener {
-                statusText.text = "Selected ${camera.name}"
+                Toast.makeText(this@MainActivity, camera.name, Toast.LENGTH_SHORT).show()
             }
         }
 
