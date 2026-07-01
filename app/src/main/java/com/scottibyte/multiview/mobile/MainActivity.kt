@@ -32,6 +32,7 @@ class MainActivity : Activity() {
     private lateinit var cameraHeaderText: TextView
     private lateinit var connectionDetails: View
     private lateinit var connectionToggleButton: Button
+    private lateinit var connectionStateText: TextView
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
@@ -58,6 +59,7 @@ class MainActivity : Activity() {
         cameraHeaderText = findViewById(R.id.cameraHeaderText)
         connectionDetails = findViewById(R.id.connectionDetails)
         connectionToggleButton = findViewById(R.id.connectionToggleButton)
+        connectionStateText = findViewById(R.id.connectionStateText)
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
@@ -78,7 +80,11 @@ class MainActivity : Activity() {
         }
 
         pairButton.setOnClickListener {
-            requestPairing()
+            if (prefs().getString("token", null).isNullOrBlank()) {
+                requestPairing()
+            } else {
+                resetPairing()
+            }
         }
 
         connectionToggleButton.setOnClickListener {
@@ -89,19 +95,20 @@ class MainActivity : Activity() {
             }
         }
 
-        findViewById<Button>(R.id.loadCamerasButton).setOnClickListener {
-            fetchConfig()
-        }
 
         val token = prefs().getString("token", null)
         if (!token.isNullOrBlank()) {
-            connectionSummaryText.text = "Connected to: ${savedServer.removePrefix("https://").removePrefix("http://")}"
+            connectionSummaryText.text = "Camera viewer"
+            connectionStateText.text = "Connection status: Connected"
             connectionDetails.visibility = View.GONE
+            pairButton.text = "Reset Pairing"
             statusText.text = "Stored pairing token found. Loading cameras..."
             fetchConfig()
         } else {
-            connectionSummaryText.text = "Not paired"
+            connectionSummaryText.text = "Camera viewer"
+            connectionStateText.text = "Connection status: Not paired"
             connectionDetails.visibility = View.VISIBLE
+            pairButton.text = "Pair With Server"
         }
     }
 
@@ -178,8 +185,10 @@ class MainActivity : Activity() {
                         runOnUiThread {
                             pairingCodeText.text = ""
                             pairingHelpText.text = ""
-                            connectionSummaryText.text = "Connected to: ${serverUrl.removePrefix("https://").removePrefix("http://")}"
+                            connectionSummaryText.text = "Camera viewer"
+                            connectionStateText.text = "Connection status: Connected"
                             connectionDetails.visibility = View.GONE
+                            pairButton.text = "Reset Pairing"
                             statusText.text = "Paired successfully. Loading cameras..."
                             Toast.makeText(this, "Paired successfully", Toast.LENGTH_SHORT).show()
                             fetchConfig()
@@ -200,6 +209,19 @@ class MainActivity : Activity() {
         }, 2500)
     }
 
+
+
+    private fun resetPairing() {
+        pollingCode = null
+        prefs().edit().remove("token").apply()
+        pairButton.text = "Pair With Server"
+        connectionStateText.text = "Connection status: Not paired"
+        connectionDetails.visibility = View.VISIBLE
+        cameraAdapter.submit(emptyList())
+        cameraHeaderText.text = "Cameras"
+        statusText.text = "Pairing reset. Pair with the server again."
+        Toast.makeText(this, "Pairing reset", Toast.LENGTH_SHORT).show()
+    }
 
     private fun fetchConfig() {
         val serverUrl = normalizedServerUrl()
@@ -314,6 +336,7 @@ class MainActivity : Activity() {
             val group: TextView = view.findViewById(R.id.cameraGroup)
             val thumbnail: ImageView = view.findViewById(R.id.cameraThumb)
             val placeholder: TextView = view.findViewById(R.id.thumbPlaceholder)
+            val state: TextView = view.findViewById(R.id.cameraState)
         }
     }
 

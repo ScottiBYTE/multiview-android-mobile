@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Mobile camera viewer"
+            android:text="Camera viewer"
             android:textColor="@color/text_dim"
             android:textSize="15sp" />
 
@@ -37,8 +37,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:background="@color/panel_soft"
-            android:padding="12dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
             android:text="Ready."
             android:textColor="@color/accent"
             android:textSize="15sp"
@@ -49,14 +49,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:orientation="vertical"
-            android:background="@color/panel"
-            android:padding="18dp">
+            android:orientation="vertical">
 
             <Button
                 android:id="@+id/connectionToggleButton"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="0dp"
+                android:paddingStart="18dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="8dp"
+                android:background="@drawable/connection_button_bg"
+                android:textColor="#ffffff"
+                android:textAllCaps="false"
                 android:text="Connection Settings" />
 
             <LinearLayout
@@ -64,6 +70,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/connectionStateText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Connection status: Not paired"
+                android:textColor="@color/accent"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -99,12 +114,6 @@
                 android:layout_marginTop="10dp"
                 android:text="Pair With Server" />
 
-            <Button
-                android:id="@+id/loadCamerasButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Load Cameras" />
 
             <TextView
                 android:id="@+id/pairingCodeText"
@@ -141,9 +150,9 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/cameraRecycler"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:nestedScrollingEnabled="false" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="14dp" />
 
     </LinearLayout>
-</ScrollView>
+</LinearLayout>
