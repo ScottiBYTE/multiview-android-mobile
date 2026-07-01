@@ -1,6 +1,7 @@
 package com.scottibyte.multiview.mobile
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -224,7 +225,7 @@ class MainActivity : Activity() {
     }
 
     private fun fetchConfig() {
-        val serverUrl = normalizedServerUrl()
+        val serverUrl = prefs().getString("serverUrl", normalizedServerUrl()) ?: normalizedServerUrl()
         val token = prefs().getString("token", null)
 
         if (token.isNullOrBlank()) {
@@ -325,7 +326,13 @@ class MainActivity : Activity() {
             }
 
             holder.itemView.setOnClickListener {
-                Toast.makeText(this@MainActivity, camera.name, Toast.LENGTH_SHORT).show()
+                val intent = Intent(this@MainActivity, PlayerActivity::class.java)
+                    .putExtra("cameraId", camera.id)
+                    .putExtra("cameraName", camera.name)
+                    .putExtra("cameraGroup", camera.group)
+                    .putExtra("streamUrl", camera.hlsUrl)
+                    .putExtra("thumbnailUrl", camera.thumbnailUrl)
+                startActivity(intent)
             }
         }
 

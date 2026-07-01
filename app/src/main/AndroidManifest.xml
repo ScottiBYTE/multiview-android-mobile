@@ -6,7 +6,13 @@
         android:theme="@style/AppTheme"
         android:label="ScottiBYTE MultiView Mobile"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:supportsRtl="true">
+
+        <activity
+            android:name=".PlayerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
 
         <activity
             android:name=".MainActivity"
