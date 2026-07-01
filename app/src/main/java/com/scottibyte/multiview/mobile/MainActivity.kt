@@ -6,9 +6,15 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
-import android.widget.LinearLayout
 import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -25,7 +31,8 @@ class MainActivity : Activity() {
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
-    private lateinit var cameraList: LinearLayout
+    private lateinit var cameraRecycler: RecyclerView
+    private lateinit var cameraAdapter: CameraAdapter
 
     private var pollingCode: String? = null
 
@@ -46,7 +53,10 @@ class MainActivity : Activity() {
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
-        cameraList = findViewById(R.id.cameraList)
+        cameraRecycler = findViewById(R.id.cameraRecycler)
+        cameraAdapter = CameraAdapter()
+        cameraRecycler.layoutManager = LinearLayoutManager(this)
+        cameraRecycler.adapter = cameraAdapter
 
         val savedServer = prefs().getString("serverUrl", defaultServerUrl) ?: defaultServerUrl
         serverUrlEdit.setText(savedServer)
@@ -228,31 +238,57 @@ class MainActivity : Activity() {
     }
 
     private fun renderCameraList(cameras: List<Camera>) {
-        cameraList.removeAllViews()
+        cameraAdapter.submit(cameras)
+    }
 
-        if (cameras.isEmpty()) {
-            val empty = TextView(this)
-            empty.text = "No cameras returned by server."
-            empty.setTextColor(android.graphics.Color.rgb(203, 213, 225))
-            empty.textSize = 18f
-            cameraList.addView(empty)
-            return
+    inner class CameraAdapter : RecyclerView.Adapter<CameraAdapter.CameraViewHolder>() {
+        private val items = mutableListOf<Camera>()
+
+        fun submit(cameras: List<Camera>) {
+            items.clear()
+            items.addAll(cameras)
+            notifyDataSetChanged()
         }
 
-        cameras.forEach { camera ->
-            val card = TextView(this)
-            card.text = "${camera.name}\n${camera.group}"
-            card.setTextColor(android.graphics.Color.rgb(248, 250, 252))
-            card.textSize = 18f
-            card.setPadding(22, 18, 22, 18)
-            card.setBackgroundColor(android.graphics.Color.rgb(23, 34, 53))
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CameraViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_camera_card, parent, false)
+            return CameraViewHolder(view)
+        }
 
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, 14)
-            cameraList.addView(card, params)
+        override fun onBindViewHolder(holder: CameraViewHolder, position: Int) {
+            val camera = items[position]
+            holder.name.text = camera.name
+            holder.group.text = camera.group.ifBlank { "Default" }
+            if (camera.thumbnailUrl.isNotBlank()) {
+                holder.thumbnail.load(camera.thumbnailUrl) {
+                    crossfade(true)
+                    listener(
+                        onSuccess = { _, _ ->
+                            holder.placeholder.visibility = View.GONE
+                        },
+                        onError = { _, _ ->
+                            holder.placeholder.visibility = View.VISIBLE
+                        }
+                    )
+                }
+            } else {
+                holder.thumbnail.setImageDrawable(null)
+                holder.placeholder.visibility = View.VISIBLE
+            }
+
+            holder.itemView.setOnClickListener {
+                statusText.text = "Selected ${camera.name}"
+            }
+        }
+
+        override fun getItemCount(): Int = items.size
+
+        inner class CameraViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val name: TextView = view.findViewById(R.id.cameraName)
+            val group: TextView = view.findViewById(R.id.cameraGroup)
+            val thumbnail: ImageView = view.findViewById(R.id.cameraThumb)
+            val placeholder: TextView = view.findViewById(R.id.thumbPlaceholder)
         }
     }
 
