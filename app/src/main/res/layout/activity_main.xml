@@ -68,6 +68,32 @@
                 android:layout_marginTop="10dp"
                 android:text="Pair With Server" />
 
+            <Button
+                android:id="@+id/loadCamerasButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Load Cameras" />
+
+            <TextView
+                android:id="@+id/pairingCodeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text=""
+                android:textColor="@color/accent"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/pairingHelpText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text=""
+                android:textColor="@color/text_muted"
+                android:textSize="15sp" />
+
             <TextView
                 android:id="@+id/statusText"
                 android:layout_width="match_parent"
@@ -78,6 +104,13 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cameraList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="vertical" />
 
     </LinearLayout>
 </ScrollView>

@@ -1,4 +1,51 @@
-package com.scottibyte.multiview.mobile
+from pathlib import Path
+
+layout = Path("app/src/main/res/layout/activity_main.xml")
+main = Path("app/src/main/java/com/scottibyte/multiview/mobile/MainActivity.kt")
+
+text = layout.read_text()
+text = text.replace(
+'''            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Ready."
+                android:textColor="@color/accent"
+                android:textSize="18sp"
+                android:textStyle="bold" />''',
+'''            <TextView
+                android:id="@+id/pairingCodeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text=""
+                android:textColor="@color/accent"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/pairingHelpText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text=""
+                android:textColor="@color/text_muted"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Ready."
+                android:textColor="@color/accent"
+                android:textSize="18sp"
+                android:textStyle="bold" />'''
+)
+layout.write_text(text)
+
+main.write_text('''package com.scottibyte.multiview.mobile
 
 import android.app.Activity
 import android.os.Bundle
@@ -7,9 +54,7 @@ import android.os.Looper
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.LinearLayout
 import android.widget.Toast
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.OutputStreamWriter
@@ -25,17 +70,8 @@ class MainActivity : Activity() {
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
-    private lateinit var cameraList: LinearLayout
 
     private var pollingCode: String? = null
-
-    data class Camera(
-        val id: String,
-        val name: String,
-        val group: String,
-        val hlsUrl: String,
-        val thumbnailUrl: String
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +82,6 @@ class MainActivity : Activity() {
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
-        cameraList = findViewById(R.id.cameraList)
 
         val savedServer = prefs().getString("serverUrl", defaultServerUrl) ?: defaultServerUrl
         serverUrlEdit.setText(savedServer)
@@ -61,10 +96,6 @@ class MainActivity : Activity() {
 
         pairButton.setOnClickListener {
             requestPairing()
-        }
-
-        findViewById<Button>(R.id.loadCamerasButton).setOnClickListener {
-            fetchConfig()
         }
 
         val token = prefs().getString("token", null)
@@ -101,7 +132,7 @@ class MainActivity : Activity() {
                 )
 
                 val displayCode = response.optString("displayCode", response.optString("pairingCode"))
-                val rawCode = response.optString("pairingCode", displayCode).replace(Regex("\\D"), "")
+                val rawCode = response.optString("pairingCode", displayCode).replace(Regex("\\\\D"), "")
 
                 runOnUiThread {
                     setBusy(pairButton, false, "Pair With Server")
@@ -146,9 +177,8 @@ class MainActivity : Activity() {
                         runOnUiThread {
                             pairingCodeText.text = ""
                             pairingHelpText.text = ""
-                            statusText.text = "Paired successfully. Loading cameras..."
+                            statusText.text = "Paired successfully."
                             Toast.makeText(this, "Paired successfully", Toast.LENGTH_SHORT).show()
-                            fetchConfig()
                         }
                     } else {
                         runOnUiThread {
@@ -164,96 +194,6 @@ class MainActivity : Activity() {
                 }
             }.start()
         }, 2500)
-    }
-
-
-    private fun fetchConfig() {
-        val serverUrl = normalizedServerUrl()
-        val token = prefs().getString("token", null)
-
-        if (token.isNullOrBlank()) {
-            statusText.text = "No token stored. Pair with the server first."
-            return
-        }
-
-        statusText.text = "Loading camera configuration..."
-
-        Thread {
-            try {
-                val response = httpGetJson("$serverUrl/api/tv/config", token)
-                val cameras = parseCameras(response)
-
-                runOnUiThread {
-                    renderCameraList(cameras)
-                    statusText.text = "Loaded ${cameras.size} cameras."
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    statusText.text = "Failed to load cameras: ${e.message}"
-                }
-            }
-        }.start()
-    }
-
-    private fun parseCameras(root: JSONObject): List<Camera> {
-        val arr: JSONArray = root.optJSONArray("cameras")
-            ?: root.optJSONObject("config")?.optJSONArray("cameras")
-            ?: JSONArray()
-
-        val result = mutableListOf<Camera>()
-
-        for (i in 0 until arr.length()) {
-            val item = arr.optJSONObject(i) ?: continue
-
-            val id = item.optString("id")
-            val name = item.optString("name", id)
-            val group = item.optString("group", "Default")
-            val streams = item.optJSONObject("streams")
-            val images = item.optJSONObject("images")
-            val hlsUrl = item.optString(
-                "hlsUrl",
-                streams?.optString("hls") ?: item.optString(
-                    "url",
-                    item.optString("streamUrl", "")
-                )
-            )
-            val thumbnailUrl = images?.optString("thumbnail") ?: ""
-
-            if (id.isNotBlank() && hlsUrl.isNotBlank()) {
-                result.add(Camera(id, name, group, hlsUrl, thumbnailUrl))
-            }
-        }
-
-        return result.sortedWith(compareBy<Camera> { it.group }.thenBy { it.name })
-    }
-
-    private fun renderCameraList(cameras: List<Camera>) {
-        cameraList.removeAllViews()
-
-        if (cameras.isEmpty()) {
-            val empty = TextView(this)
-            empty.text = "No cameras returned by server."
-            empty.setTextColor(android.graphics.Color.rgb(203, 213, 225))
-            empty.textSize = 18f
-            cameraList.addView(empty)
-            return
-        }
-
-        cameras.forEach { camera ->
-            val card = TextView(this)
-            card.text = "${camera.name}\n${camera.group}"
-            card.setTextColor(android.graphics.Color.rgb(248, 250, 252))
-            card.textSize = 18f
-            card.setPadding(22, 18, 22, 18)
-            card.setBackgroundColor(android.graphics.Color.rgb(23, 34, 53))
-
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, 14)
-            cameraList.addView(card, params)
-        }
     }
 
     private fun httpGetJson(url: String, bearerToken: String?): JSONObject {
@@ -294,3 +234,6 @@ class MainActivity : Activity() {
         return JSONObject(text)
     }
 }
+''')
+
+print("Added mobile pairing flow.")
