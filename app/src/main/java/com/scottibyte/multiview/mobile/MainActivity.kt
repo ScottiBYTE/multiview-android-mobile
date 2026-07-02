@@ -119,6 +119,15 @@ class MainActivity : Activity() {
         return serverUrlEdit.text.toString().trim().trimEnd('/').ifBlank { defaultServerUrl }
     }
 
+    private fun savedServerUrl(): String {
+        return prefs()
+            .getString("serverUrl", null)
+            ?.trim()
+            ?.trimEnd('/')
+            ?.ifBlank { defaultServerUrl }
+            ?: defaultServerUrl
+    }
+
     private fun setBusy(button: Button, busy: Boolean, label: String) {
         button.isEnabled = !busy
         button.text = label
@@ -225,7 +234,8 @@ class MainActivity : Activity() {
     }
 
     private fun fetchConfig() {
-        val serverUrl = prefs().getString("serverUrl", normalizedServerUrl()) ?: normalizedServerUrl()
+        val serverUrl = savedServerUrl()
+        serverUrlEdit.setText(serverUrl)
         val token = prefs().getString("token", null)
 
         if (token.isNullOrBlank()) {
@@ -326,12 +336,14 @@ class MainActivity : Activity() {
             }
 
             holder.itemView.setOnClickListener {
+                val index = items.indexOfFirst { it.id == camera.id }
+
                 val intent = Intent(this@MainActivity, PlayerActivity::class.java)
-                    .putExtra("cameraId", camera.id)
-                    .putExtra("cameraName", camera.name)
-                    .putExtra("cameraGroup", camera.group)
-                    .putExtra("streamUrl", camera.hlsUrl)
-                    .putExtra("thumbnailUrl", camera.thumbnailUrl)
+                    .putExtra("cameraIndex", index)
+                    .putStringArrayListExtra("cameraNames", ArrayList(items.map { it.name }))
+                    .putStringArrayListExtra("cameraGroups", ArrayList(items.map { it.group }))
+                    .putStringArrayListExtra("cameraUrls", ArrayList(items.map { it.hlsUrl }))
+
                 startActivity(intent)
             }
         }

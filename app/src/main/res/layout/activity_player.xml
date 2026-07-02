@@ -13,6 +13,22 @@
         app:use_controller="true" />
 
     <TextView
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="18dp"
+        android:background="@drawable/player_back_button_bg"
+        android:paddingStart="18dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="8dp"
+        android:text="← Back"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
         android:id="@+id/playerTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
