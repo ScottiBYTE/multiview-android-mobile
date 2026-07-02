@@ -4,76 +4,68 @@
     android:id="@+id/cameraCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
+    android:layout_marginBottom="14dp"
     app:cardBackgroundColor="@color/panel"
     app:cardCornerRadius="18dp"
-    app:cardElevation="4dp"
+    app:cardElevation="3dp"
     app:strokeColor="#334155"
     app:strokeWidth="1dp">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="210dp"
+        android:background="#020617">
 
-        <FrameLayout
+        <ImageView
+            android:id="@+id/cameraThumb"
             android:layout_width="match_parent"
-            android:layout_height="194dp"
-            android:background="#020617">
+            android:layout_height="match_parent"
+            android:contentDescription="Camera thumbnail"
+            android:scaleType="centerCrop" />
 
-            <ImageView
-                android:id="@+id/cameraThumb"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="Camera thumbnail"
-                android:scaleType="centerCrop" />
-
-            <TextView
-                android:id="@+id/thumbPlaceholder"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text=""
-                android:textColor="#64748b"
-                android:textSize="16sp" />
-        </FrameLayout>
-
-        <LinearLayout
+        <View
             android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_gravity="bottom"
+            android:background="#99000000" />
+
+        <TextView
+            android:id="@+id/thumbPlaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text=""
+            android:textColor="#64748b"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/cameraName"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="18dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="16dp">
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            android:textColor="@color/text_main"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/cameraName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_main"
-                android:textSize="21sp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/cameraState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="18dp"
+            android:text="●"
+            android:textColor="@color/accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/cameraGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:textColor="@color/text_muted"
-                android:textSize="15sp" />
+        <TextView
+            android:id="@+id/cameraGroup"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/cameraState"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="● Online"
-                android:textColor="@color/accent"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-    </LinearLayout>
+    </FrameLayout>
 </com.google.android.material.card.MaterialCardView>

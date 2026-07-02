@@ -253,7 +253,8 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     renderCameraList(cameras)
                     cameraHeaderText.text = "Cameras (${cameras.size})"
-                    statusText.text = "Loaded ${cameras.size} cameras."
+                    connectionStateText.text = "Connection status: Connected • ${cameras.size} cameras"
+                    statusText.visibility = View.GONE
                 }
             } catch (e: Exception) {
                 runOnUiThread {

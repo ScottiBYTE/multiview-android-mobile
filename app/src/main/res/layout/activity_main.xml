@@ -12,7 +12,7 @@
         android:paddingStart="20dp"
         android:paddingTop="42dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="22dp">
+        android:paddingBottom="8dp">
 
         <TextView
             android:id="@+id/titleText"
@@ -27,6 +27,7 @@
             android:id="@+id/connectionSummaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:layout_marginTop="6dp"
             android:text="Camera viewer"
             android:textColor="@color/text_dim"
@@ -48,7 +49,7 @@
             android:id="@+id/connectionPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="8dp"
             android:orientation="vertical">
 
             <Button
@@ -104,6 +105,9 @@
                 android:id="@+id/saveServerButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/connection_button_bg"
+                android:textColor="#ffffff"
+                android:textAllCaps="false"
                 android:layout_marginTop="14dp"
                 android:text="Save Server URL" />
 
@@ -111,6 +115,9 @@
                 android:id="@+id/pairButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/connection_button_bg"
+                android:textColor="#ffffff"
+                android:textAllCaps="false"
                 android:layout_marginTop="10dp"
                 android:text="Pair With Server" />
 
@@ -119,7 +126,8 @@
                 android:id="@+id/pairingCodeText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:visibility="gone"
+                android:layout_marginTop="8dp"
                 android:text=""
                 android:textColor="@color/accent"
                 android:textSize="34sp"
@@ -129,6 +137,7 @@
                 android:id="@+id/pairingHelpText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 android:layout_marginTop="8dp"
                 android:text=""
                 android:textColor="@color/text_muted"
@@ -141,7 +150,8 @@
             android:id="@+id/cameraHeaderText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:visibility="gone"
+            android:layout_marginTop="10dp"
             android:text="Cameras"
             android:textColor="@color/text_main"
             android:textSize="22sp"
