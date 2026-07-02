@@ -15,6 +15,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.media3.common.MediaItem
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import org.json.JSONArray
@@ -126,7 +131,7 @@ class MainActivity : Activity() {
 
         reorderButton.setOnClickListener {
             toggleEditMode()
-            reorderButton.text = if (editMode) "Done" else "Reorder"
+            reorderButton.text = if (editMode) "Done" else "Sort"
         }
 
         connectionToggleButton.setOnClickListener {
@@ -370,6 +375,8 @@ class MainActivity : Activity() {
     inner class CameraAdapter : RecyclerView.Adapter<CameraAdapter.CameraViewHolder>() {
         private val items = mutableListOf<Camera>()
         private var adapterEditMode = false
+        private var previewPlayer: ExoPlayer? = null
+        private var previewCameraId: String? = null
 
         fun submit(cameras: List<Camera>) {
             items.clear()
@@ -404,7 +411,17 @@ class MainActivity : Activity() {
             holder.name.text = camera.name
             holder.group.text = camera.group.ifBlank { "Default" }
             holder.dragHandle.visibility = if (adapterEditMode) View.VISIBLE else View.GONE
-            if (camera.thumbnailUrl.isNotBlank()) {
+            val previewActive = previewCameraId == camera.id
+            holder.inlinePlayer.visibility = if (previewActive) View.VISIBLE else View.GONE
+            holder.thumbnail.visibility = if (previewActive) View.GONE else View.VISIBLE
+            holder.placeholder.visibility = View.GONE
+            holder.state.text = if (previewActive) "LIVE" else "●"
+
+            if (previewActive) {
+                startPreview(camera, holder.inlinePlayer)
+            }
+
+            if (!previewActive && camera.thumbnailUrl.isNotBlank()) {
                 holder.thumbnail.load(camera.thumbnailUrl) {
                     crossfade(true)
                     listener(
@@ -422,15 +439,58 @@ class MainActivity : Activity() {
             }
 
             holder.itemView.setOnClickListener {
+                if (adapterEditMode) return@setOnClickListener
+
                 val index = items.indexOfFirst { it.id == camera.id }
 
-                val intent = Intent(this@MainActivity, PlayerActivity::class.java)
-                    .putExtra("cameraIndex", index)
-                    .putStringArrayListExtra("cameraNames", ArrayList(items.map { it.name }))
-                    .putStringArrayListExtra("cameraGroups", ArrayList(items.map { it.group }))
-                    .putStringArrayListExtra("cameraUrls", ArrayList(items.map { it.hlsUrl }))
+                if (previewCameraId == camera.id) {
+                    val intent = Intent(this@MainActivity, PlayerActivity::class.java)
+                        .putExtra("cameraIndex", index)
+                        .putStringArrayListExtra("cameraNames", ArrayList(items.map { it.name }))
+                        .putStringArrayListExtra("cameraGroups", ArrayList(items.map { it.group }))
+                        .putStringArrayListExtra("cameraUrls", ArrayList(items.map { it.hlsUrl }))
 
-                startActivity(intent)
+                    startActivity(intent)
+                } else {
+                    stopPreview()
+                    previewCameraId = camera.id
+                    notifyDataSetChanged()
+                }
+            }
+        }
+
+
+        private fun makePreviewPlayer(): ExoPlayer {
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            val mediaSourceFactory = DefaultMediaSourceFactory(this@MainActivity)
+                .setDataSourceFactory(httpDataSourceFactory)
+
+            return ExoPlayer.Builder(this@MainActivity)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+        }
+
+        private fun startPreview(camera: Camera, view: PlayerView) {
+            if (previewPlayer == null) {
+                previewPlayer = makePreviewPlayer()
+            }
+
+            view.player = previewPlayer
+            previewPlayer?.setMediaItem(MediaItem.fromUri(camera.hlsUrl))
+            previewPlayer?.prepare()
+            previewPlayer?.playWhenReady = true
+        }
+
+        private fun stopPreview() {
+            previewPlayer?.release()
+            previewPlayer = null
+            previewCameraId = null
+        }
+
+        override fun onViewRecycled(holder: CameraViewHolder) {
+            super.onViewRecycled(holder)
+            if (holder.inlinePlayer.player == previewPlayer) {
+                holder.inlinePlayer.player = null
             }
         }
 
@@ -441,6 +501,7 @@ class MainActivity : Activity() {
             val group: TextView = view.findViewById(R.id.cameraGroup)
             val dragHandle: TextView = view.findViewById(R.id.dragHandle)
             val thumbnail: ImageView = view.findViewById(R.id.cameraThumb)
+            val inlinePlayer: PlayerView = view.findViewById(R.id.inlinePlayer)
             val placeholder: TextView = view.findViewById(R.id.thumbPlaceholder)
             val state: TextView = view.findViewById(R.id.cameraState)
         }
