@@ -1,6 +1,7 @@
 package com.scottibyte.multiview.mobile
 
 import android.app.Activity
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -9,6 +10,7 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.view.TextureView
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -35,6 +37,7 @@ class PlayerActivity : Activity() {
     private var panY = 0f
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+    private var videoSurface: TextureView? = null
 
     private var cameraIndex = 0
     private var cameraNames = arrayListOf<String>()
@@ -75,6 +78,11 @@ class PlayerActivity : Activity() {
         player = makePlayer()
         playerView.useController = false
         playerView.player = player
+
+        playerView.post {
+            videoSurface = playerView.videoSurfaceView as? TextureView
+            applyZoomPan()
+        }
 
         player?.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
@@ -117,6 +125,13 @@ class PlayerActivity : Activity() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 toggleOverlay()
+                return true
+            }
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                resetZoomPan()
+                showOverlay()
+                scheduleOverlayHide()
                 return true
             }
 
@@ -206,10 +221,16 @@ class PlayerActivity : Activity() {
 
 
     private fun applyZoomPan() {
-        playerView.scaleX = zoomScale
-        playerView.scaleY = zoomScale
-        playerView.translationX = panX
-        playerView.translationY = panY
+        val texture = videoSurface
+        if (texture == null) {
+            return
+        }
+
+        val matrix = Matrix()
+        matrix.setScale(zoomScale, zoomScale, texture.width / 2f, texture.height / 2f)
+        matrix.postTranslate(panX, panY)
+        texture.setTransform(matrix)
+        texture.invalidate()
     }
 
     private fun resetZoomPan() {
