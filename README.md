@@ -1,23 +1,70 @@
 # ScottiBYTE MultiView Mobile
 
-Phone and tablet Android client for ScottiBYTE MultiView Server.
+Phone and tablet Android client for **ScottiBYTE MultiView Server**.
 
-## Purpose
+![ScottiBYTE MultiView Mobile](https://raw.githubusercontent.com/ScottiBYTE/multiview-android-mobile/main/screenshots/scottibyte-multiview-mobile-main.png)
 
-ScottiBYTE MultiView Mobile is a touch-first Android application for phones and tablets. It uses the existing ScottiBYTE MultiView Server for pairing, authorization, camera inventory, and stream access.
+## Latest Release
 
-## Planned Features
+**v0.5.0**
 
-- Mobile-friendly Server URL setup
-- Pairing with ScottiBYTE MultiView Server
-- Camera list/grid view
-- Single-camera viewer
-- MultiView layout for tablets
-- About and donate screens
-- Touch-first phone/tablet interface
+Download the latest APK from the GitHub Releases page.
 
-## Related Project
+---
 
-The Android TV / Fire TV client remains separate:
+## Features
 
-https://github.com/ScottiBYTE/multiview-android-tv
+- Mobile-optimized camera browser
+- Inline live camera preview
+- Full-screen landscape player
+- Smooth pinch-to-zoom and panning
+- Double-tap zoom reset
+- Swipe between cameras
+- Drag-and-drop camera ordering
+- ScottiBYTE secure pairing
+- Automatic thumbnail loading
+- Works with phones and tablets
+- ScottiBYTE branded interface
+
+---
+
+## Requirements
+
+Requires **ScottiBYTE MultiView Server**.
+
+Server repository:
+
+https://github.com/ScottiBYTE/scottibyte-multiview-server
+
+---
+
+## Pairing
+
+1. Install the APK.
+2. Connect to your MultiView Server.
+3. Enter the pairing code shown by the app.
+4. Approve the client from the MultiView Server dashboard.
+5. Cameras automatically load.
+
+---
+
+## Screens
+
+- Camera browser
+- Inline live preview
+- Full-screen player
+- Camera reordering
+- Connection management
+
+---
+
+## Downloads
+
+The latest APK is available under **GitHub Releases**.
+
+---
+
+## Related Projects
+
+- ScottiBYTE MultiView Server
+- ScottiBYTE MultiView Android TV
