@@ -368,6 +368,11 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        cameraAdapter.stopInlinePreview()
+    }
+
     private fun renderCameraList(cameras: List<Camera>) {
         cameraAdapter.submit(orderedCameras(cameras))
     }
@@ -479,6 +484,11 @@ class MainActivity : Activity() {
             previewPlayer?.setMediaItem(MediaItem.fromUri(camera.hlsUrl))
             previewPlayer?.prepare()
             previewPlayer?.playWhenReady = true
+        }
+
+        fun stopInlinePreview() {
+            stopPreview()
+            notifyDataSetChanged()
         }
 
         private fun stopPreview() {
