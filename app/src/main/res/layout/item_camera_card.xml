@@ -39,6 +39,19 @@
             android:textSize="16sp" />
 
         <TextView
+            android:id="@+id/dragHandle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="14dp"
+            android:layout_marginBottom="48dp"
+            android:text="☰"
+            android:textColor="@color/accent"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/cameraName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

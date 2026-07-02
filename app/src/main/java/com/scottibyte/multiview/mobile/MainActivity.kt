@@ -13,6 +13,7 @@ import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -33,12 +34,14 @@ class MainActivity : Activity() {
     private lateinit var cameraHeaderText: TextView
     private lateinit var connectionDetails: View
     private lateinit var connectionToggleButton: Button
+    private lateinit var reorderButton: Button
     private lateinit var connectionStateText: TextView
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
     private lateinit var cameraRecycler: RecyclerView
     private lateinit var cameraAdapter: CameraAdapter
+    private var editMode = false
 
     private var pollingCode: String? = null
 
@@ -60,6 +63,7 @@ class MainActivity : Activity() {
         cameraHeaderText = findViewById(R.id.cameraHeaderText)
         connectionDetails = findViewById(R.id.connectionDetails)
         connectionToggleButton = findViewById(R.id.connectionToggleButton)
+        reorderButton = findViewById(R.id.reorderButton)
         connectionStateText = findViewById(R.id.connectionStateText)
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
@@ -68,6 +72,28 @@ class MainActivity : Activity() {
         cameraAdapter = CameraAdapter()
         cameraRecycler.layoutManager = LinearLayoutManager(this)
         cameraRecycler.adapter = cameraAdapter
+
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+            0
+        ) {
+            override fun isLongPressDragEnabled(): Boolean = editMode
+
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return cameraAdapter.moveItem(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                saveCameraOrder(cameraAdapter.currentIds())
+            }
+        }).attachToRecyclerView(cameraRecycler)
 
         val savedServer = prefs().getString("serverUrl", defaultServerUrl) ?: defaultServerUrl
         serverUrlEdit.setText(savedServer)
@@ -86,6 +112,21 @@ class MainActivity : Activity() {
             } else {
                 resetPairing()
             }
+        }
+
+        findViewById<TextView>(R.id.titleText).setOnLongClickListener {
+            toggleEditMode()
+            true
+        }
+
+        connectionToggleButton.setOnLongClickListener {
+            toggleEditMode()
+            true
+        }
+
+        reorderButton.setOnClickListener {
+            toggleEditMode()
+            reorderButton.text = if (editMode) "Done" else "Reorder"
         }
 
         connectionToggleButton.setOnClickListener {
@@ -296,17 +337,60 @@ class MainActivity : Activity() {
         return result.sortedWith(compareBy<Camera> { it.group }.thenBy { it.name })
     }
 
+    private fun orderedCameras(cameras: List<Camera>): List<Camera> {
+        val saved = prefs().getString("cameraOrder", "") ?: ""
+        val ids = saved.split(",").filter { it.isNotBlank() }
+        if (ids.isEmpty()) return cameras
+
+        val byId = cameras.associateBy { it.id }
+        val ordered = ids.mapNotNull { byId[it] }
+        val newCameras = cameras.filterNot { ids.contains(it.id) }
+        return ordered + newCameras
+    }
+
+    private fun saveCameraOrder(ids: List<String>) {
+        prefs().edit().putString("cameraOrder", ids.joinToString(",")).apply()
+    }
+
+    private fun toggleEditMode() {
+        editMode = !editMode
+        cameraAdapter.setEditMode(editMode)
+        statusText.visibility = View.VISIBLE
+        statusText.text = if (editMode) {
+            "Edit mode: long-press and drag cameras to reorder."
+        } else {
+            "Camera order saved."
+        }
+    }
+
     private fun renderCameraList(cameras: List<Camera>) {
-        cameraAdapter.submit(cameras)
+        cameraAdapter.submit(orderedCameras(cameras))
     }
 
     inner class CameraAdapter : RecyclerView.Adapter<CameraAdapter.CameraViewHolder>() {
         private val items = mutableListOf<Camera>()
+        private var adapterEditMode = false
 
         fun submit(cameras: List<Camera>) {
             items.clear()
             items.addAll(cameras)
             notifyDataSetChanged()
+        }
+
+        fun setEditMode(enabled: Boolean) {
+            adapterEditMode = enabled
+            notifyDataSetChanged()
+        }
+
+        fun currentIds(): List<String> = items.map { it.id }
+
+        fun moveItem(from: Int, to: Int): Boolean {
+            if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+            if (from !in items.indices || to !in items.indices) return false
+            val item = items.removeAt(from)
+            items.add(to, item)
+            notifyItemMoved(from, to)
+            return true
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CameraViewHolder {
@@ -319,6 +403,7 @@ class MainActivity : Activity() {
             val camera = items[position]
             holder.name.text = camera.name
             holder.group.text = camera.group.ifBlank { "Default" }
+            holder.dragHandle.visibility = if (adapterEditMode) View.VISIBLE else View.GONE
             if (camera.thumbnailUrl.isNotBlank()) {
                 holder.thumbnail.load(camera.thumbnailUrl) {
                     crossfade(true)
@@ -354,6 +439,7 @@ class MainActivity : Activity() {
         inner class CameraViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val name: TextView = view.findViewById(R.id.cameraName)
             val group: TextView = view.findViewById(R.id.cameraGroup)
+            val dragHandle: TextView = view.findViewById(R.id.dragHandle)
             val thumbnail: ImageView = view.findViewById(R.id.cameraThumb)
             val placeholder: TextView = view.findViewById(R.id.thumbPlaceholder)
             val state: TextView = view.findViewById(R.id.cameraState)
