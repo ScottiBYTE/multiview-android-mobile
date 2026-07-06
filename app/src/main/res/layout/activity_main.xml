@@ -164,6 +164,15 @@
                 android:layout_marginTop="14dp"
                 android:text="Save Server URL" />
 
+            <Switch
+                android:id="@+id/biometricLockSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Require biometric unlock"
+                android:textColor="@color/text_main"
+                android:textStyle="bold" />
+
             <TextView
                 android:id="@+id/versionText"
                 android:layout_width="match_parent"
@@ -222,6 +231,21 @@
             android:textColor="@color/text_main"
             android:textSize="22sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/privacyOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:background="#020617"
+            android:text="MultiView locked\nAuthenticate to view cameras"
+            android:textAlignment="center"
+            android:textColor="@color/accent"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"

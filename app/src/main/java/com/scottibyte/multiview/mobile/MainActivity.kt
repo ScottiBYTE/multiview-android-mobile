@@ -1,6 +1,8 @@
 package com.scottibyte.multiview.mobile
 
-import android.app.Activity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.net.Uri
 import android.text.Editable
@@ -13,6 +15,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,7 +38,7 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private val defaultServerUrl = "https://multiview-server.scottibyte.com"
     private val handler = Handler(Looper.getMainLooper())
 
@@ -51,8 +54,10 @@ class MainActivity : Activity() {
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
+    private lateinit var biometricLockSwitch: android.widget.Switch
     private lateinit var saveServerButton: Button
     private lateinit var swipeRefresh: SwipeRefreshLayout
+    private lateinit var privacyOverlay: TextView
     private lateinit var cameraRecycler: RecyclerView
     private lateinit var cameraAdapter: CameraAdapter
     private var editMode = false
@@ -60,6 +65,8 @@ class MainActivity : Activity() {
     private val hideStatusRunnable = Runnable { statusText.visibility = View.GONE }
 
     private var pollingCode: String? = null
+    private var biometricUnlockedThisSession = false
+    private var biometricPromptShowing = false
 
     data class Camera(
         val id: String,
@@ -85,11 +92,26 @@ class MainActivity : Activity() {
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
+        biometricLockSwitch = findViewById(R.id.biometricLockSwitch)
+        biometricLockSwitch.isChecked = prefs().getBoolean("requireBiometric", false)
+        biometricLockSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs().edit().putBoolean("requireBiometric", isChecked).apply()
+            if (isChecked) {
+                biometricUnlockedThisSession = false
+                requireBiometricUnlock()
+            } else {
+                biometricUnlockedThisSession = false
+                biometricPromptShowing = false
+                updatePrivacyOverlay()
+                Toast.makeText(this, "Biometric unlock disabled", Toast.LENGTH_SHORT).show()
+            }
+        }
         saveServerButton = findViewById(R.id.saveServerButton)
         findViewById<TextView>(R.id.versionText).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ScottiBYTE/multiview-android-mobile/releases")))
         }
         swipeRefresh = findViewById(R.id.swipeRefresh)
+        privacyOverlay = findViewById(R.id.privacyOverlay)
         cameraRecycler = findViewById(R.id.cameraRecycler)
         cameraAdapter = CameraAdapter()
         cameraRecycler.layoutManager = cameraLayoutManager()
@@ -305,6 +327,69 @@ class MainActivity : Activity() {
 
 
 
+    private fun updatePrivacyOverlay() {
+        val locked = prefs().getBoolean("requireBiometric", false) && !biometricUnlockedThisSession
+        privacyOverlay.visibility = if (locked) View.VISIBLE else View.GONE
+        swipeRefresh.visibility = if (locked) View.GONE else View.VISIBLE
+    }
+
+    private fun biometricAvailable(): Boolean {
+        val manager = BiometricManager.from(this)
+        val allowed = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        return manager.canAuthenticate(allowed) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    private fun requireBiometricUnlock() {
+        updatePrivacyOverlay()
+        if (!prefs().getBoolean("requireBiometric", false)) return
+        if (biometricUnlockedThisSession || biometricPromptShowing) return
+
+        if (!biometricAvailable()) {
+            Toast.makeText(this, "No biometric or device lock is available", Toast.LENGTH_LONG).show()
+            prefs().edit().putBoolean("requireBiometric", false).apply()
+            biometricLockSwitch.isChecked = false
+            return
+        }
+
+        biometricPromptShowing = true
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                biometricPromptShowing = false
+                biometricUnlockedThisSession = true
+                updatePrivacyOverlay()
+                Toast.makeText(this@MainActivity, "Unlocked", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                biometricPromptShowing = false
+                if (!isFinishing) {
+                    finish()
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(this@MainActivity, "Unlock failed", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        val info = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Unlock MultiView")
+            .setSubtitle("Confirm identity to view cameras")
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+            .build()
+
+        prompt.authenticate(info)
+    }
+
     private fun resetPairing() {
         pollingCode = null
         prefs().edit().remove("token").apply()
@@ -435,11 +520,16 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        if (prefs().getBoolean("requireBiometric", false)) {
+            biometricUnlockedThisSession = false
+            updatePrivacyOverlay()
+        }
         cameraAdapter.stopInlinePreview()
     }
 
     override fun onResume() {
         super.onResume()
+        requireBiometricUnlock()
         if (prefs().getString("token", null).isNullOrBlank()) return
         cameraRecycler.layoutManager = cameraLayoutManager()
     }
