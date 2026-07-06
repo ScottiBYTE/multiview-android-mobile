@@ -2,6 +2,9 @@ package com.scottibyte.multiview.mobile
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.text.Editable
+import android.text.TextWatcher
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,11 +19,13 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import coil.load
 import org.json.JSONArray
@@ -46,6 +51,7 @@ class MainActivity : Activity() {
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
+    private lateinit var saveServerButton: Button
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var cameraRecycler: RecyclerView
     private lateinit var cameraAdapter: CameraAdapter
@@ -79,10 +85,14 @@ class MainActivity : Activity() {
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
+        saveServerButton = findViewById(R.id.saveServerButton)
+        findViewById<TextView>(R.id.versionText).setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ScottiBYTE/multiview-android-mobile")))
+        }
         swipeRefresh = findViewById(R.id.swipeRefresh)
         cameraRecycler = findViewById(R.id.cameraRecycler)
         cameraAdapter = CameraAdapter()
-        cameraRecycler.layoutManager = LinearLayoutManager(this)
+        cameraRecycler.layoutManager = cameraLayoutManager()
         cameraRecycler.adapter = cameraAdapter
 
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
@@ -110,13 +120,26 @@ class MainActivity : Activity() {
         val savedServer = prefs().getString("serverUrl", defaultServerUrl) ?: defaultServerUrl
         serverUrlEdit.setText(savedServer)
 
-        findViewById<Button>(R.id.saveServerButton).setOnClickListener {
+        saveServerButton.setOnClickListener {
             val value = normalizedServerUrl()
             prefs().edit().putString("serverUrl", value).apply()
             serverUrlEdit.setText(value)
+            saveServerButton.visibility = View.GONE
+            statusText.visibility = View.VISIBLE
             statusText.text = "Server URL saved."
             Toast.makeText(this, "Server URL saved", Toast.LENGTH_SHORT).show()
         }
+
+        serverUrlEdit.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                val saved = savedServerUrl().trimEnd('/')
+                val current = s?.toString()?.trim()?.trimEnd('/') ?: ""
+                saveServerButton.visibility = if (current.isNotBlank() && current != saved) View.VISIBLE else View.GONE
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         pairButton.setOnClickListener {
             if (prefs().getString("token", null).isNullOrBlank()) {
@@ -400,9 +423,25 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun cameraLayoutManager(): RecyclerView.LayoutManager {
+        val widthDp = resources.configuration.screenWidthDp
+        return if (widthDp >= 600) {
+            val columns = if (widthDp >= 900) 3 else 2
+            GridLayoutManager(this, columns)
+        } else {
+            LinearLayoutManager(this)
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         cameraAdapter.stopInlinePreview()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (prefs().getString("token", null).isNullOrBlank()) return
+        cameraRecycler.layoutManager = cameraLayoutManager()
     }
 
     private fun renderCameraList(cameras: List<Camera>) {
@@ -523,8 +562,7 @@ class MainActivity : Activity() {
             notifyDataSetChanged()
         }
 
-        private fun stopPreview() {
-            previewPlayer?.release()
+        private fun stopPreview() {            previewPlayer?.release()
             previewPlayer = null
             previewCameraId = null
         }
