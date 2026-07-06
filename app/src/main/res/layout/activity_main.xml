@@ -171,7 +171,7 @@
                 android:layout_marginTop="12dp"
                 android:gravity="center"
                 android:textAlignment="center"
-                android:text="GitHub v0.5.1"
+                android:text="GitHub Releases v0.6.0"
                 android:singleLine="true"
                 android:background="@drawable/github_button_bg"
                 android:textColor="#ffffff"

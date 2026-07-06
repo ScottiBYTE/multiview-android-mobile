@@ -87,7 +87,7 @@ class MainActivity : Activity() {
         pairButton = findViewById(R.id.pairButton)
         saveServerButton = findViewById(R.id.saveServerButton)
         findViewById<TextView>(R.id.versionText).setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ScottiBYTE/multiview-android-mobile")))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ScottiBYTE/multiview-android-mobile/releases")))
         }
         swipeRefresh = findViewById(R.id.swipeRefresh)
         cameraRecycler = findViewById(R.id.cameraRecycler)
