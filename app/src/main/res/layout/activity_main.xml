@@ -77,25 +77,44 @@
                 android:id="@+id/connectionToggleButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:paddingStart="18dp"
+                android:paddingStart="14dp"
                 android:paddingTop="8dp"
-                android:paddingEnd="18dp"
+                android:paddingEnd="14dp"
                 android:paddingBottom="8dp"
                 android:background="@drawable/connection_button_bg"
                 android:textColor="#ffffff"
                 android:textAllCaps="false"
-                android:text="Connection Settings" />
+                android:text="Settings" />
 
             <Button
                 android:id="@+id/reorderButton"
                 android:layout_width="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:background="@drawable/connection_button_bg"
                 android:text="Sort"
                 android:textAllCaps="false"
                 android:textColor="#ffffff" />
+
+            <Button
+                android:id="@+id/refreshButton"
+                android:layout_width="56dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:background="@drawable/connection_button_bg"
+                android:text="↻"
+                android:textAllCaps="false"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
 
             </LinearLayout>
 
@@ -190,12 +209,19 @@
             android:textSize="22sp"
             android:textStyle="bold" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/cameraRecycler"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="14dp" />
+            android:layout_marginTop="14dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/cameraRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     </LinearLayout>
 </LinearLayout>

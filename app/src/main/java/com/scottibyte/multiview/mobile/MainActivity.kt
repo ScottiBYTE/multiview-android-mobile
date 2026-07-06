@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import coil.load
 import org.json.JSONArray
 import org.json.JSONObject
@@ -40,13 +41,17 @@ class MainActivity : Activity() {
     private lateinit var connectionDetails: View
     private lateinit var connectionToggleButton: Button
     private lateinit var reorderButton: Button
+    private lateinit var refreshButton: Button
     private lateinit var connectionStateText: TextView
     private lateinit var pairingCodeText: TextView
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var cameraRecycler: RecyclerView
     private lateinit var cameraAdapter: CameraAdapter
     private var editMode = false
+    private val statusHideHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val hideStatusRunnable = Runnable { statusText.visibility = View.GONE }
 
     private var pollingCode: String? = null
 
@@ -69,10 +74,12 @@ class MainActivity : Activity() {
         connectionDetails = findViewById(R.id.connectionDetails)
         connectionToggleButton = findViewById(R.id.connectionToggleButton)
         reorderButton = findViewById(R.id.reorderButton)
+        refreshButton = findViewById(R.id.refreshButton)
         connectionStateText = findViewById(R.id.connectionStateText)
         pairingCodeText = findViewById(R.id.pairingCodeText)
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
+        swipeRefresh = findViewById(R.id.swipeRefresh)
         cameraRecycler = findViewById(R.id.cameraRecycler)
         cameraAdapter = CameraAdapter()
         cameraRecycler.layoutManager = LinearLayoutManager(this)
@@ -132,6 +139,14 @@ class MainActivity : Activity() {
         reorderButton.setOnClickListener {
             toggleEditMode()
             reorderButton.text = if (editMode) "Done" else "Sort"
+        }
+
+        refreshButton.setOnClickListener {
+            refreshCameras()
+        }
+
+        swipeRefresh.setOnRefreshListener {
+            refreshCameras()
         }
 
         connectionToggleButton.setOnClickListener {
@@ -279,6 +294,20 @@ class MainActivity : Activity() {
         Toast.makeText(this, "Pairing reset", Toast.LENGTH_SHORT).show()
     }
 
+    private fun showTemporaryStatus(message: String, delayMs: Long = 2000) {
+        statusHideHandler.removeCallbacks(hideStatusRunnable)
+        statusText.visibility = View.VISIBLE
+        statusText.text = message
+        statusHideHandler.postDelayed(hideStatusRunnable, delayMs)
+    }
+
+    private fun refreshCameras() {
+        statusHideHandler.removeCallbacks(hideStatusRunnable)
+        statusText.visibility = View.VISIBLE
+        statusText.text = "Refreshing cameras..."
+        fetchConfig()
+    }
+
     private fun fetchConfig() {
         val serverUrl = savedServerUrl()
         serverUrlEdit.setText(serverUrl)
@@ -286,6 +315,7 @@ class MainActivity : Activity() {
 
         if (token.isNullOrBlank()) {
             statusText.text = "No token stored. Pair with the server first."
+            if (::swipeRefresh.isInitialized) swipeRefresh.isRefreshing = false
             return
         }
 
@@ -300,11 +330,13 @@ class MainActivity : Activity() {
                     renderCameraList(cameras)
                     cameraHeaderText.text = "Cameras (${cameras.size})"
                     connectionStateText.text = "Connection status: Connected • ${cameras.size} cameras"
-                    statusText.visibility = View.GONE
+                    showTemporaryStatus("Updated ${cameras.size} cameras.")
+                    swipeRefresh.isRefreshing = false
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    statusText.text = "Failed to load cameras: ${e.message}"
+                    statusText.text = "Failed to refresh cameras: ${e.message}"
+                    swipeRefresh.isRefreshing = false
                 }
             }
         }.start()
