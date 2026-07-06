@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.media3.common.MediaItem
@@ -55,6 +56,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pairingHelpText: TextView
     private lateinit var pairButton: Button
     private lateinit var biometricLockSwitch: android.widget.Switch
+    private lateinit var hideFromSwitcherSwitch: android.widget.Switch
+    private lateinit var keepScreenAwakeSwitch: android.widget.Switch
     private lateinit var saveServerButton: Button
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var privacyOverlay: TextView
@@ -93,6 +96,27 @@ class MainActivity : AppCompatActivity() {
         pairingHelpText = findViewById(R.id.pairingHelpText)
         pairButton = findViewById(R.id.pairButton)
         biometricLockSwitch = findViewById(R.id.biometricLockSwitch)
+        hideFromSwitcherSwitch = findViewById(R.id.hideFromSwitcherSwitch)
+        keepScreenAwakeSwitch = findViewById(R.id.keepScreenAwakeSwitch)
+
+        hideFromSwitcherSwitch.isChecked = prefs().getBoolean("hideFromSwitcher", false)
+        keepScreenAwakeSwitch.isChecked = prefs().getBoolean("keepScreenAwake", false)
+
+        applySwitcherPrivacy()
+        applyKeepScreenAwake()
+
+        hideFromSwitcherSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs().edit().putBoolean("hideFromSwitcher", isChecked).apply()
+            applySwitcherPrivacy()
+            Toast.makeText(this, if (isChecked) "App switcher privacy enabled" else "App switcher privacy disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        keepScreenAwakeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs().edit().putBoolean("keepScreenAwake", isChecked).apply()
+            applyKeepScreenAwake()
+            Toast.makeText(this, if (isChecked) "Screen will stay awake" else "Screen can sleep normally", Toast.LENGTH_SHORT).show()
+        }
+
         biometricLockSwitch.isChecked = prefs().getBoolean("requireBiometric", false)
         biometricLockSwitch.setOnCheckedChangeListener { _, isChecked ->
             prefs().edit().putBoolean("requireBiometric", isChecked).apply()
@@ -327,6 +351,22 @@ class MainActivity : AppCompatActivity() {
 
 
 
+    private fun applyKeepScreenAwake() {
+        if (prefs().getBoolean("keepScreenAwake", false)) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    private fun applySwitcherPrivacy() {
+        if (prefs().getBoolean("hideFromSwitcher", false)) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+
     private fun updatePrivacyOverlay() {
         val locked = prefs().getBoolean("requireBiometric", false) && !biometricUnlockedThisSession
         privacyOverlay.visibility = if (locked) View.VISIBLE else View.GONE
@@ -341,6 +381,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requireBiometricUnlock() {
+        if (prefs().getBoolean("requireBiometric", false) && !biometricUnlockedThisSession) {
+            connectionDetails.visibility = View.GONE
+        }
+
         updatePrivacyOverlay()
         if (!prefs().getBoolean("requireBiometric", false)) return
         if (biometricUnlockedThisSession || biometricPromptShowing) return
@@ -521,6 +565,7 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         if (prefs().getBoolean("requireBiometric", false)) {
+            connectionDetails.visibility = View.GONE
             biometricUnlockedThisSession = false
             updatePrivacyOverlay()
         }
